@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class Documents</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #111111;
+      --sub: #777777;
+      --border: #e5e5e5;
+      --hover: #f7f7f7;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: "Gill Sans", "Gill Sans MT", "Cabin", "Noto Sans JP", sans-serif;
+      line-height: 1.5;
+      padding: 48px 24px;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    header {
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--text);
+      padding-bottom: 16px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .file-count {
+      font-size: 0.8rem;
+      color: var(--sub);
+      margin-top: 4px;
+      letter-spacing: 0.1em;
+    }
+    .file-list {
+      list-style: none;
+    }
+    .file-item {
+      border-bottom: 1px solid var(--border);
+    }
+    .file-link {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      text-decoration: none;
+      color: inherit;
+      padding: 14px 8px;
+      transition: background-color 0.15s ease;
+    }
+    .file-link:hover {
+      background-color: var(--hover);
+    }
+    .file-name {
+      font-size: 0.95rem;
+      font-weight: 500;
+      word-break: break-all;
+      padding-right: 16px;
+    }
+    .file-meta {
+      font-size: 0.75rem;
+      color: var(--sub);
+      white-space: nowrap;
+      text-align: right;
+    }
+    .file-size {
+      margin-left: 8px;
+    }
+    .status-msg {
+      font-size: 0.85rem;
+      color: var(--sub);
+      padding: 32px 0;
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 id="classTitle">LOADING...</h1>
+      <div id="fileCount" class="file-count"></div>
+    </header>
+    <main>
+      <div id="status" class="status-msg">LOADING FILES...</div>
+      <ul id="fileList" class="file-list"></ul>
+    </main>
+  </div>
+
+  <script>
+    // ★先ほどブラウザで確認したGASのWebアプリURL（末尾が /exec のもの）を貼り付け
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwiWIndSJ-myQYL0mrBUlLqlgxj2k0a8cqcvZywRgF3O9ze5A4ND4JGfZNRlBBVzOx9/exec';
+
+    function getTargetClass() {
+      // 1. URLの末尾が #kisoenb2026 の場合（ハッシュ取得）
+      const hash = window.location.hash.replace(/^#/, '').trim();
+      if (hash) return hash;
+
+      // 2. 従来の ?class=kisoenb2026 の場合（互換性維持）
+      const params = new URLSearchParams(window.location.search);
+      return params.get('class');
+    }
+
+    async function loadDocuments() {
+      const targetClass = getTargetClass();
+
+      const titleEl = document.getElementById('classTitle');
+      const countEl = document.getElementById('fileCount');
+      const statusEl = document.getElementById('status');
+      const listEl = document.getElementById('fileList');
+
+      if (!targetClass) {
+        titleEl.textContent = 'NO CLASS SPECIFIED';
+        statusEl.textContent = 'URL hash "#classname" or parameter "?class=..." is required.';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${GAS_API_URL}?class=${encodeURIComponent(targetClass)}`);
+        const data = await response.json();
+
+        if (data.error) {
+          titleEl.textContent = targetClass.toUpperCase();
+          statusEl.textContent = 'FOLDER NOT FOUND';
+          return;
+        }
+
+        // config.txt の動的反映
+        if (data.config) {
+          if (data.config.title) titleEl.textContent = data.config.title;
+          else titleEl.textContent = (data.className || targetClass).toUpperCase();
+
+          const fonts = [data.config.fontEn, data.config.fontJa].filter(Boolean).join(', ');
+          if (fonts) document.body.style.fontFamily = fonts;
+          if (data.config.fontSize) document.documentElement.style.fontSize = data.config.fontSize;
+        } else {
+          titleEl.textContent = (data.className || targetClass).toUpperCase();
+        }
+
+        countEl.textContent = `${data.files.length} ${data.files.length === 1 ? 'FILE' : 'FILES'}`;
+        statusEl.style.display = 'none';
+
+        if (data.files.length === 0) {
+          statusEl.style.display = 'block';
+          statusEl.textContent = 'NO PDF FILES AVAILABLE';
+          return;
+        }
+
+        listEl.innerHTML = '';
+        data.files.forEach(file => {
+          const li = document.createElement('li');
+          li.className = 'file-item';
+          li.innerHTML = `
+            <a href="${file.previewUrl}" target="_blank" rel="noopener noreferrer" class="file-link">
+              <span class="file-name">${file.name}</span>
+              <span class="file-meta">
+                <span>${file.updated}</span>
+                <span class="file-size">${file.size}</span>
+              </span>
+            </a>
+          `;
+          listEl.appendChild(li);
+        });
+
+      } catch (err) {
+        titleEl.textContent = targetClass.toUpperCase();
+        statusEl.textContent = 'FAILED TO LOAD FILES';
+      }
+    }
+
+    // ハッシュ切り替え時も自動再読み込み
+    window.addEventListener('hashchange', loadDocuments);
+    loadDocuments();
+  </script>
+</body>
+</html>
