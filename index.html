@@ -166,7 +166,8 @@
         } else {
           titleEl.textContent = data.className || targetClass;
         }
-
+          document.title = titleEl.textContent;
+        
         // 2. config.txt によるフォント・スタイルの動的適用
         if (data.config) {
           if (data.config.fontEn) {
