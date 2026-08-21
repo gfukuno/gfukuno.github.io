@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Class Documents</title>
-  <!-- Gill Sansの代替としても機能するCabinおよびNoto Sans JPを事前読み込み -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -24,7 +23,7 @@
       padding: 0;
     }
     html {
-      font-size: 20px; /* デフォルトフォントサイズを20pxに設定 */
+      font-size: 20px; /* デフォルトサイズ */
     }
     body {
       background-color: var(--bg);
@@ -35,7 +34,7 @@
       -webkit-font-smoothing: antialiased;
     }
     .container {
-      max-width: 820px;
+      max-width: 720px;
       margin: 0 auto;
     }
     header {
@@ -65,36 +64,34 @@
       border-bottom: 1px solid var(--border);
     }
     .file-link {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      display: block; /* 縦並び構造 */
       text-decoration: none;
       color: inherit;
-      padding: 13px 4px;
+      padding: 14px 6px;
       transition: background-color 0.12s ease;
     }
     .file-link:hover {
       background-color: var(--hover);
     }
     .file-name {
-      font-size: 0.8rem;
-      font-weight: 400;
+      font-size: 0.85rem;
+      font-weight: 500;
       letter-spacing: 0.01em;
       word-break: break-all;
-      padding-right: 20px;
       color: var(--text);
+      line-height: 1.35;
     }
     .file-meta {
       font-size: 0.62rem;
       color: var(--sub);
-      white-space: nowrap;
-      text-align: right;
+      margin-top: 5px;
       letter-spacing: 0.02em;
       font-weight: 400;
       font-family: "Gill Sans", "Gill Sans MT", "Cabin", sans-serif;
     }
-    .file-size {
-      margin-left: 10px;
+    .file-divider {
+      margin: 0 6px;
+      opacity: 0.6;
     }
     .status-msg {
       font-size: 0.75rem;
@@ -118,7 +115,7 @@
   </div>
 
   <script>
-    // ★GAS WebアプリURL
+    // ★ご自身のGAS WebアプリURL
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwiWIndSJ-myQYL0mrBUlLqlgxj2k0a8cqcvZywRgF3O9ze5A4ND4JGfZNRlBBVzOx9/exec';
 
     function getTargetClass() {
@@ -152,7 +149,7 @@
           return;
         }
 
-        // config.txt 設定の動的反映
+        // config.txt 設定の反映
         if (data.config) {
           if (data.config.title) titleEl.textContent = data.config.title;
           else titleEl.textContent = (data.className || targetClass).toUpperCase();
@@ -179,11 +176,12 @@
           li.className = 'file-item';
           li.innerHTML = `
             <a href="${file.previewUrl}" target="_blank" rel="noopener noreferrer" class="file-link">
-              <span class="file-name">${file.name}</span>
-              <span class="file-meta">
+              <div class="file-name">${file.name}</div>
+              <div class="file-meta">
                 <span>${file.updated}</span>
+                <span class="file-divider">|</span>
                 <span class="file-size">${file.size}</span>
-              </span>
+              </div>
             </a>
           `;
           listEl.appendChild(li);
