@@ -6,6 +6,7 @@
   <title>Class Documents</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- デフォルトフォントの事前読み込み -->
   <link href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
 
   <style>
@@ -45,9 +46,9 @@
     h1 {
       font-size: 1.4rem;
       font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+      letter-spacing: 0.02em;
       line-height: 1.2;
+      /* 大文字強制を解除：入力した通りの文字で表示 */
     }
     .file-count {
       font-size: 0.65rem;
@@ -64,7 +65,7 @@
       border-bottom: 1px solid var(--border);
     }
     .file-link {
-      display: block; /* 縦並び構造 */
+      display: block;
       text-decoration: none;
       color: inherit;
       padding: 14px 6px;
@@ -87,7 +88,7 @@
       margin-top: 5px;
       letter-spacing: 0.02em;
       font-weight: 400;
-      font-family: "Gill Sans", "Gill Sans MT", "Cabin", sans-serif;
+      font-family: inherit;
     }
     .file-divider {
       margin: 0 6px;
@@ -118,6 +119,16 @@
     // ★ご自身のGAS WebアプリURL
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwiWIndSJ-myQYL0mrBUlLqlgxj2k0a8cqcvZywRgF3O9ze5A4ND4JGfZNRlBBVzOx9/exec';
 
+    // Google Fontsを動的に読み込むヘルパー関数
+    function loadGoogleFont(fontName) {
+      if (!fontName) return;
+      const cleanName = fontName.replace(/["']/g, '').trim();
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(cleanName)}:wght@300;400;500;700&display=swap`;
+      document.head.appendChild(link);
+    }
+
     function getTargetClass() {
       const hash = window.location.hash.replace(/^#/, '').trim();
       if (hash) return hash;
@@ -134,7 +145,7 @@
       const listEl = document.getElementById('fileList');
 
       if (!targetClass) {
-        titleEl.textContent = 'NO CLASS SPECIFIED';
+        titleEl.textContent = 'No Class Specified';
         statusEl.textContent = 'URL hash "#classname" or parameter "?class=..." is required.';
         return;
       }
@@ -144,21 +155,32 @@
         const data = await response.json();
 
         if (data.error) {
-          titleEl.textContent = targetClass.toUpperCase();
+          titleEl.textContent = targetClass;
           statusEl.textContent = 'FOLDER NOT FOUND';
           return;
         }
 
-        // config.txt 設定の反映
-        if (data.config) {
-          if (data.config.title) titleEl.textContent = data.config.title;
-          else titleEl.textContent = (data.className || targetClass).toUpperCase();
-
-          const fonts = [data.config.fontEn, data.config.fontJa].filter(Boolean).join(', ');
-          if (fonts) document.body.style.fontFamily = fonts;
-          if (data.config.fontSize) document.documentElement.style.fontSize = data.config.fontSize;
+        // 1. タイトルの反映（大文字変換せずそのまま表示）
+        if (data.config && data.config.title) {
+          titleEl.textContent = data.config.title;
         } else {
-          titleEl.textContent = (data.className || targetClass).toUpperCase();
+          titleEl.textContent = data.className || targetClass;
+        }
+
+        // 2. config.txt によるフォント・スタイルの動的適用
+        if (data.config) {
+          if (data.config.fontEn) {
+            const firstFont = data.config.fontEn.split(',')[0];
+            loadGoogleFont(firstFont);
+          }
+          if (data.config.fontJa) {
+            const firstFont = data.config.fontJa.split(',')[0];
+            loadGoogleFont(firstFont);
+          }
+
+          const fontFamilies = [data.config.fontEn, data.config.fontJa, 'sans-serif'].filter(Boolean).join(', ');
+          if (fontFamilies) document.body.style.fontFamily = fontFamilies;
+          if (data.config.fontSize) document.documentElement.style.fontSize = data.config.fontSize;
         }
 
         countEl.textContent = `${data.files.length} ${data.files.length === 1 ? 'FILE' : 'FILES'}`;
@@ -188,7 +210,7 @@
         });
 
       } catch (err) {
-        titleEl.textContent = targetClass.toUpperCase();
+        titleEl.textContent = targetClass;
         statusEl.textContent = 'FAILED TO LOAD FILES';
       }
     }
