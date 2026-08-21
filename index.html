@@ -179,8 +179,14 @@
             loadGoogleFont(firstFont);
           }
 
-          const fontFamilies = [data.config.fontEn, data.config.fontJa, 'sans-serif'].filter(Boolean).join(', ');
-          if (fontFamilies) document.body.style.fontFamily = fontFamilies;
+          const configuredFonts = [data.config.fontEn, data.config.fontJa]
+            .filter(Boolean);
+            
+            if (configuredFonts.length > 0) {
+              document.body.style.fontFamily =
+                [...configuredFonts, 'sans-serif'].join(', ');
+           }
+          
           if (data.config.fontSize) document.documentElement.style.fontSize = data.config.fontSize;
         }
 
